@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="outputExcelMetadata" format="excel">
+      <types:shape format="weave"><![CDATA[%dw 2.0
+
+type outputExcelMetadata = {|
+  studentdata?: Array<{|    id: Number,     name: String,     status: String  |}>
+|}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+</types:mule>
