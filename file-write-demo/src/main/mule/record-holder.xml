@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="145b344e-a799-4e2b-bf7c-dd0715c3d383" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="sql_workbencher" />
+	</db:config>
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="247eb9c6-0b7a-4023-948a-77f75f64311b" >
+		<sftp:connection host="192.168.4.138" username="invenio" password="Invenio" />
+	</sftp:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="4d11b85c-44a5-4687-8339-bae97480a813" >
+	</http:request-config>
+	<flow name="main-flow" doc:id="9a38b93e-5da1-4e53-b929-c73660235124" >
+		<scheduler doc:name="Scheduler" doc:id="bf1525a4-be5d-478c-b58f-9f6acbb42e2b" >
+			<scheduling-strategy >
+				<cron expression="0 0/5 * 1/1 * ? *"/>
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="e40028f9-66ac-4e88-bd61-608d0cbcf5c3" message="successful"/>
+		<http:request method="GET" doc:name="Request" doc:id="e75fff8b-73e1-46ea-9ac7-453c0e0c57af" url=" https://dummy.restapiexample.com/api/v1/employees"/>
+		<logger level="INFO" doc:name="EndLogger" doc:id="aa1e64be-fbf0-4184-acd8-ea96b1d51675" />
+		<ee:transform doc:name="Transform Message" doc:id="fc5bc54f-1b21-4d1e-be50-0bbe1a571c56" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.data filter
+($.employee_age>60)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="1f585aea-01c9-4e42-ba04-241f293ab90a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+(payload orderBy $.employee_age)[-1 to 0]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="c1a753ba-de4e-4784-878f-4aff5674b76d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<sftp:write doc:name="Write" doc:id="4d7b96f8-c90b-4b5e-a403-4eeaa2947222" config-ref="SFTP_Config" path='#["/orders/" ++ "POC4_" ++ (now() splitBy ".")[0] replace ":" with "-" ++ ".csv"]'/>
+		<logger level="INFO" doc:name="Logger" doc:id="d170abcb-a0c1-4724-b9e0-fd5b8e7c0845" />
+	</flow>
+</mule>
